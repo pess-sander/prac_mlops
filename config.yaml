@@ -1,0 +1,30 @@
+data:
+  sources:
+    - type: csv
+      path: data/dataset_123.csv
+    - type: csv
+      path: data/dataset_2.csv
+    - type: csv
+      path: data/dataset_3.csv
+
+  target_column: popularity
+  timestamp_column: release_date
+
+  processed_data: processed.json
+
+collection:
+  batch_size: 1024
+
+storage:
+  type: postgres
+
+  postgres:
+    host: localhost
+    port: 5432
+    database: mlops
+    user: mluser
+    password: mlpass
+
+logger:
+  log_file: logs/log.txt
+  log_level: INFO
