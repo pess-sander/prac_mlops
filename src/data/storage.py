@@ -12,16 +12,54 @@ class DataStorage:
             f"@{db_conf['host']}:{db_conf['port']}/{db_conf['database']}"
         )
 
-    def save_raw(self, batch, batch_id):
+    def save_raw(self, batch, batch_id, source_path):
         batch = batch.copy()
-        batch["batch_id"] = batch_id
-        batch["ingestion_time"] = datetime.utcnow()
 
-        batch.to_sql("raw_data", self.engine, if_exists="append", index=False)
+        ingestion_time = datetime.utcnow()
 
-    def save_batch_meta(self, meta):
-        df = pd.DataFrame([meta])
-        df.to_sql("batches", self.engine, if_exists="append", index=False)
+        meta = {
+            "batch_id": batch_id,
+            "source_path": source_path,
+            "ingestion_time": ingestion_time,
+            "rows_count": len(batch),
+            "status": None,
+            "message": None
+        }
+
+        try:
+            batch["batch_id"] = batch_id
+            batch["ingestion_time"] = ingestion_time
+
+            batch = batch.where(pd.notnull(batch), None)
+
+            # 0.0/1.0 -> False/True
+            if "explicit" in batch.columns:
+                batch["explicit"] = batch["explicit"].apply(
+                    lambda x: None if pd.isna(x) else bool(int(x))
+                )
+
+            if "row_id" in batch.columns:
+                batch = batch.drop(columns=["row_id"])
+
+            batch.to_sql(
+                "raw_data",
+                self.engine,
+                if_exists="append",
+                index=False
+            )
+
+            meta["status"] = "success"
+            meta["message"] = "batch inserted successfully"
+
+        except Exception as e:
+            meta["status"] = "failed"
+            meta["message"] = f"{type(e).__name__}: {str(e)[:300]}"
+
+            print(f"[ERROR] Batch {batch_id} failed: {e}")
+
+        finally:
+            df = pd.DataFrame([meta])
+            df.to_sql("batches", self.engine, if_exists="append", index=False)
 
     def save_data_quality(self, dq_list):
         df = pd.DataFrame(dq_list)

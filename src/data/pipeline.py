@@ -2,6 +2,9 @@ from src.data.source import DataSource
 from src.data.streamer import DataStreamer
 from src.data.storage import DataStorage
 from src.data.stats import StatsCalculator
+from src.data.cleaning import DataCleaner
+from src.data.eda import EDAReporter
+from src.data.feature_engineering import FeatureEngineer
 
 class DataCollectionPipeline:
     def __init__(self, config, logger):
@@ -12,9 +15,12 @@ class DataCollectionPipeline:
         self.target_col = self.config['data']['target_column']
         self.timestamp_col = self.config['data']['timestamp_column']
 
-        self.source = DataSource(config, logger)
         self.storage = DataStorage(config)
+        self.source = DataSource(config, logger, self.storage)
         self.stats = StatsCalculator()
+        self.cleaner = DataCleaner(config)
+        self.eda = EDAReporter(config)
+        self.fe = FeatureEngineer()
 
     def run(self, mode, weights):
         if mode == 'update':
@@ -23,26 +29,45 @@ class DataCollectionPipeline:
             self.run_inference(weights)
         elif mode == 'summary':
             self.run_summary()
-        self.logger.error(f'Unsupported mode: {mode}')
-        raise ValueError(f'Unsupported mode: {mode}')
+        else:
+            self.logger.error(f'Unsupported mode: {mode}')
+            raise ValueError(f'Unsupported mode: {mode}')
     
     def run_update(self):
-        self.logger.info('Update pipeline started')
+        self.logger.info("Update pipeline started")
 
-        df = self.source.load()
-        if df is None or df.empty():
-            self.logger.info('No new data')
-            return
-        
-        streamer = DataStreamer(df, self.batch_size, self.timestamp_col)
-        for idx, batch in enumerate(streamer):
-            self.logger.info(f'Processing batch {idx}: {len(batch)} rows')
+        sources_data = self.source.load()
 
-            try:
-                self.storage.save_raw(batch, idx)
+        if not sources_data:
+            self.logger.info("No new data")
+            return False
 
-            except Exception as e:
-                self.logger.error(f'Failed on batch {idx}: \n\t{e}')
+        for source_path, df in sources_data:
+            streamer = DataStreamer(df, self.batch_size, self.timestamp_col)
+
+            for batch_id, batch in enumerate(streamer):
+                self.logger.info(f"Processing batch {batch_id} from {source_path}")
+
+                try:
+                    self.storage.save_raw(batch, batch_id, source_path)
+
+                    dq_list = self.stats.compute_data_quality(batch, batch_id)
+                    self.storage.save_data_quality(dq_list)
+
+                    clean_batch = self.cleaner.clean(batch)
+
+                    # feature engineering
+                    clean_batch = self.fe.transform(clean_batch)
+
+                    # EDA plots
+                    paths = self.eda.generate(clean_batch, batch_id)
+
+                    self.logger.info(f"Saved {len(paths)} plots")
+
+                except Exception as e:
+                    self.logger.error(f"Unexpected failure on batch {batch_id}: {e}")
+
+        self.logger.info("Update pipeline finished")
 
 
     def run_inference(self, weights):

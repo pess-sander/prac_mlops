@@ -1,40 +1,41 @@
 import pandas as pd
-import json
-import os
+
 
 class DataSource:
-    def __init__(self, config, logger):
+    def __init__(self, config, logger, storage):
         self.sources = config['data']['sources']
-        self.processed_file = config['data']['processed_data']
-
         self.logger = logger
+        self.storage = storage
+
+    def _get_processed_sources(self):
+        try:
+            df = pd.read_sql(
+                "SELECT DISTINCT source_path FROM batches WHERE status = 'success'",
+                self.storage.engine
+            )
+            return set(df["source_path"])
+        except Exception:
+            return set()
 
     def load(self):
-        dfs = []
+        processed = self._get_processed_sources()
 
-        if os.path.exists(self.processed_file):
-            with open(self.processed_file) as f:
-                processed = set(json.load(f))
-        else:
-            processed = set()
+        data = []
 
         for source in self.sources:
-            if source['path'] in processed:
-                self.logger.info(f'Skipping {source["path"]} because it was previously processed')
+            path = source["path"]
+
+            if path in processed:
+                self.logger.info(f"Skipping {path} (already processed)")
                 continue
 
-            if source['type'] == 'csv':
+            if source["type"] == "csv":
                 try:
-                    df = pd.read_csv(source['path'])
+                    df = pd.read_csv(path)
+                    data.append((path, df))
                 except Exception as e:
-                    self.logger.error(f'Failed to load {source["path"]}: \n\t{e}')
-                
-                dfs.append(df)
-                processed.append(source['path'])
+                    self.logger.error(f"Failed to load {path}: {e}")
             else:
-                self.logger.error(f'Unsupported source type: {source['type']}')
-        
-        with open(self.processed_file, 'w') as f:
-            json.dump(processed, f, indent=4)
+                self.logger.error(f"Unsupported source type: {source['type']}")
 
-        return pd.concat(dfs, ignore_index=True)
+        return data
