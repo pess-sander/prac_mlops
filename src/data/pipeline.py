@@ -5,6 +5,9 @@ from src.data.stats import StatsCalculator
 from src.data.cleaning import DataCleaner
 from src.data.eda import EDAReporter
 from src.data.feature_engineering import FeatureEngineer
+from src.data.prepare_data import PrepareData
+
+from src.model.train import Trainer
 
 class DataCollectionPipeline:
     def __init__(self, config, logger):
@@ -21,6 +24,9 @@ class DataCollectionPipeline:
         self.cleaner = DataCleaner(config)
         self.eda = EDAReporter(config)
         self.fe = FeatureEngineer()
+        self.prepare = PrepareData()
+
+        self.trainer = Trainer(config, logger)
 
     def run(self, mode, weights):
         if mode == 'update':
@@ -63,6 +69,12 @@ class DataCollectionPipeline:
                     paths = self.eda.generate(clean_batch, batch_id)
 
                     self.logger.info(f"Saved {len(paths)} plots")
+
+                    # Prepare Data
+                    X_num, X_artists, X_names, y = self.prepare.preprocess(clean_batch)
+                    
+                    # train and validate
+                    self.trainer.train_and_validate(X_num, X_artists, X_names, y, batch_id)
 
                 except Exception as e:
                     self.logger.error(f"Unexpected failure on batch {batch_id}: {e}")

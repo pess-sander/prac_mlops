@@ -24,11 +24,43 @@ storage:
     host: localhost
     port: 5432
     database: mlops
-    user: YOUR_USERNAME
-    password: YOUR_PASSWORD
+    user: postgres
+    password: password
 
 cleaning:
   max_row_missing: 0.1
 
 analysis:
   reports_dir: eda_plots
+
+model:
+  streaming_model:
+    window_size: 2000
+    prune_every: 2000
+    min_models: 3
+    save_path: "models/streaming_ensemble.pkl"
+    
+  model_grid:
+    base_params:
+      alpha: 0.01
+      beta: 1.0
+      l1: 0.0
+      l2: 2.0
+
+    variants:
+      - {alpha: 0.001, beta: 1.0, l1: 0.0, l2: 1.0}
+      - {alpha: 0.005, beta: 1.0, l1: 0.0, l2: 2.0}
+      - {alpha: 0.01,  beta: 1.0, l1: 0.0, l2: 2.0}
+      - {alpha: 0.01,  beta: 1.0, l1: 0.001, l2: 2.0}
+      - {alpha: 0.02,  beta: 0.5, l1: 0.0, l2: 3.0}
+      - {alpha: 0.01,  beta: 2.0, l1: 0.0, l2: 1.0}
+  
+  feature_combinations:
+    - ["num"]
+    - ["num", "artists"]
+    - ["num", "artists", "names"]
+  
+  training:
+    validation_split: 0.8
+    random_state: 42
+    verbose: true

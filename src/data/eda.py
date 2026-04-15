@@ -35,7 +35,7 @@ class EDAReporter:
 
         # numeric histograms
         skip_cols = ['artists', 'id', 'name', 'release_date', 'mode', 'key']
-        categorical_columns = ['year', 'explicit', 'is_collab', 'key_mode']
+        categorical_columns = ['year', 'explicit', 'key_mode']
         num_cols = [x for x in batch.select_dtypes(include="number").columns if x not in categorical_columns and x not in skip_cols]
 
         for col in num_cols:

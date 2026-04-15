@@ -6,7 +6,6 @@ class FeatureEngineer:
             parsed = df["artists"].apply(self.parse_artists)
 
             df["n_artists"] = parsed.apply(len)
-            df["is_collab"] = (df["n_artists"] > 1).astype(int)
 
         return df
 
