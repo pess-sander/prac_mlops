@@ -8,6 +8,7 @@ from src.data.feature_engineering import FeatureEngineer
 from src.data.prepare_data import PrepareData
 
 from src.model.train import Trainer
+from src.model.inference import Inference
 
 class DataCollectionPipeline:
     def __init__(self, config, logger):
@@ -27,6 +28,7 @@ class DataCollectionPipeline:
         self.prepare = PrepareData()
 
         self.trainer = Trainer(config, logger)
+        self.inference = Inference(config, logger)
 
     def run(self, mode, weights):
         if mode == 'update':
@@ -72,6 +74,10 @@ class DataCollectionPipeline:
 
                     # Prepare Data
                     X_num, X_artists, X_names, y = self.prepare.preprocess(clean_batch)
+
+                    self.logger.info(f"X_num {X_num.max()}")
+                    self.logger.info(f"X_artists {X_artists.max()}")
+                    self.logger.info(f"X_names {X_names.max()}")
                     
                     # train and validate
                     self.trainer.train_and_validate(X_num, X_artists, X_names, y, batch_id)
@@ -84,6 +90,17 @@ class DataCollectionPipeline:
 
     def run_inference(self, weights):
         pass
+
+        # clean_batch = self.cleaner.clean(batch)
+
+        # # feature engineering
+        # clean_batch = self.fe.transform(clean_batch)
+
+        # # Prepare Data
+        # X_num, X_artists, X_names, y = self.prepare.preprocess(clean_batch)
+        
+        # # run model
+        # predict = self.inference.run_model(weights, X_num, X_artists, X_names)
 
     def run_summary(self):
         pass

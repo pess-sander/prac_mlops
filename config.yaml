@@ -35,25 +35,27 @@ analysis:
 
 model:
   streaming_model:
-    window_size: 2000
-    prune_every: 2000
-    min_models: 3
+    window_size: 5000
+    prune_every: 300
+    min_models: 1
     save_path: "models/streaming_ensemble.pkl"
     
   model_grid:
-    base_params:
-      alpha: 0.01
-      beta: 1.0
-      l1: 0.0
-      l2: 2.0
 
     variants:
-      - {alpha: 0.001, beta: 1.0, l1: 0.0, l2: 1.0}
-      - {alpha: 0.005, beta: 1.0, l1: 0.0, l2: 2.0}
-      - {alpha: 0.01,  beta: 1.0, l1: 0.0, l2: 2.0}
-      - {alpha: 0.01,  beta: 1.0, l1: 0.001, l2: 2.0}
-      - {alpha: 0.02,  beta: 0.5, l1: 0.0, l2: 3.0}
-      - {alpha: 0.01,  beta: 2.0, l1: 0.0, l2: 1.0}
+      - {lr: 0.0005, reg_type: l2, reg: 0.0001}
+      - {lr: 0.001,  reg_type: l2, reg: 0.001}
+      - {lr: 0.003,  reg_type: l2, reg: 0.001}
+      - {lr: 0.005,  reg_type: l2, reg: 0.01}
+      - {lr: 0.01,   reg_type: l2, reg: 0.01}
+      - {lr: 0.02,   reg_type: l2, reg: 0.05}
+
+      - {lr: 0.0005, reg_type: l1, reg: 0.0001}
+      - {lr: 0.001,  reg_type: l1, reg: 0.001}
+      - {lr: 0.003,  reg_type: l1, reg: 0.001}
+      - {lr: 0.005,  reg_type: l1, reg: 0.01}
+      - {lr: 0.01,   reg_type: l1, reg: 0.01}
+      - {lr: 0.02,   reg_type: l1, reg: 0.005}
   
   feature_combinations:
     - ["num"]

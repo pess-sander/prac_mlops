@@ -1,6 +1,5 @@
 from typing import Optional, Sequence
 
-from src.data.prepare_data import PrepareData
 from src.model.streaming_model import StreamingModel
 
 
