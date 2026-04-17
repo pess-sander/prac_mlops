@@ -8,6 +8,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', required=True, choices=['update', 'inference', 'summary'])
     parser.add_argument('--weights', help='Pretrained model for inference')
+    parser.add_argument('--file', help='Input file for inference')
     parser.add_argument('--config', default='config.yaml', help='Configuration file')
     return parser.parse_args()
 
@@ -18,4 +19,4 @@ if __name__ == '__main__':
     
     logger = Logger(config).get_logger()
     pipeline = DataCollectionPipeline(config, logger)
-    pipeline.run(args.mode, args.weights)
+    pipeline.run(args.mode, args.weights, args.file)

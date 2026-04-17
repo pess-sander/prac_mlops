@@ -110,6 +110,17 @@ class StreamingModel:
 			del self.errors[worst_idx]
 			del self.features_config[worst_idx]
 
+	def _extract_model_info(self, model, features):
+		optimizer = getattr(model, "optimizer", None)
+
+		return {
+			"optimizer": type(optimizer).__name__,
+			"lr": getattr(optimizer, "lr", None),
+			"l1": getattr(model, "l1", None),
+			"l2": getattr(model, "l2", None),
+			"intercept_lr": getattr(model, "intercept_lr", None),
+			"features": ",".join(features)
+		}
 
 	def predict(self, X_num, X_artists, X_text):
 		preds = []
@@ -171,6 +182,32 @@ class StreamingModel:
 		mae = sum(maes) / len(maes)
 		self.logger.info(f"[ENSEMBLE+PRUNE VALIDATION] MAE = {mae:.4f}")
 		
+		rows = []
+
+		for i, model in enumerate(self.models):
+			info = self._extract_model_info(model, self.features_config[i])
+
+			row = {
+				"timestamp": datetime.utcnow(),
+				"model_idx": i,
+				"mae": mae,
+				**info
+			}
+			rows.append(row)
+
+		df = pd.DataFrame(rows)
+
+		os.makedirs("data", exist_ok=True)
+		out_path = "data/metrics.csv"
+
+		# append mode
+		df.to_csv(
+			out_path,
+			mode="a",
+			header=not os.path.exists(out_path),
+			index=False
+		)
+
 		return mae
 	
 	def save_models(self, filepath):

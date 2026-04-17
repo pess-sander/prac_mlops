@@ -23,5 +23,16 @@ class Inference:
 
         if not self.model.models:
             raise ValueError(f"No models loaded from {weights}")
+        
+        preds = []
+		
+        for i in range(len(X_num)):
+            y_pred = self.model.predict(
+                X_num[i:i+1],
+                X_artists[i:i+1] if X_artists is not None else None,
+                X_names[i:i+1] if X_names is not None else None
+            )
+			
+            preds.append(y_pred)
 
-        return self.model.predict(X_num, X_artists, X_names)
+        return preds

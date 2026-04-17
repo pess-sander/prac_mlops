@@ -1,11 +1,11 @@
 data:
   sources:
     - type: csv
-      path: data/serialized/dataset_1.csv
+      path: data/train/dataset_1.csv
     - type: csv
-      path: data/serialized/dataset_2.csv
+      path: data/train/dataset_2.csv
     - type: csv
-      path: data/serialized/dataset_3.csv
+      path: data/train/dataset_3.csv
 
   target_column: popularity
   timestamp_column: release_date
@@ -24,8 +24,8 @@ storage:
     host: localhost
     port: 5432
     database: mlops
-    user: postgres
-    password: password
+    user: mluser
+    password: mlpass
 
 cleaning:
   max_row_missing: 0.1

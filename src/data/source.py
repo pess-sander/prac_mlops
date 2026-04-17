@@ -4,6 +4,7 @@ import pandas as pd
 class DataSource:
     def __init__(self, config, logger, storage):
         self.sources = config['data']['sources']
+        self.test_source = config['data']['test']
         self.logger = logger
         self.storage = storage
 
@@ -39,3 +40,10 @@ class DataSource:
                 self.logger.error(f"Unsupported source type: {source['type']}")
 
         return data
+    
+    def load_inference(self, in_path):
+        try:
+            df = pd.read_csv(in_path)
+            return df
+        except Exception as e:
+            self.logger.error(f'Failed to load test set {in_path}: {e}')
